@@ -1,5 +1,8 @@
 # Changelog
 
+## [NEXT_VERSION] - [UNRELEASED]
+* BUG: Release - Hand the release notes to `gh` on stdin instead of passing them as a command-line argument. Windows caps an entire command line at 32,767 characters, so a changelog section of any real size - a major release runs to tens of kilobytes - killed the call with "Argument list too long" and aborted the release after the version bump, branch and tag had already been pushed. The compare-link edit that follows rewrites that same body and had the same ceiling. A failed `gh` call now also reports what it said rather than discarding its output.
+
 ## [0.2.6] - 2026-07-22
 * BUG: Release - Sync the default branch with its remote before merging a release into it. Commits that land on the default branch directly on the remote - most often Dependabot pull requests merged from the GitHub UI - left the local branch stale, so the release merged onto an out-of-date base and the push was rejected as a non-fast-forward. Because the tag and GitHub release were already created, the release aborted half-finished and stranded the working branch on the default branch. The default branch is now fast-forwarded to its remote first, and a failed sync, merge, or push stops with a clear reason instead of ending silently.
 

@@ -7,3 +7,4 @@ Thumbs.db
 bin/config/release.conf
 .wakatime-project
 .vscode
+.claude
