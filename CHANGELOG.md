@@ -1,6 +1,6 @@
 # Changelog
 
-## [NEXT_VERSION] - [UNRELEASED]
+## [0.2.7] - 2026-08-02
 * BUG: Release - Hand the release notes to `gh` on stdin instead of passing them as a command-line argument. Windows caps an entire command line at 32,767 characters, so a changelog section of any real size - a major release runs to tens of kilobytes - killed the call with "Argument list too long" and aborted the release after the version bump, branch and tag had already been pushed. The compare-link edit that follows rewrites that same body and had the same ceiling. A failed `gh` call now also reports what it said rather than discarding its output.
 
 ## [0.2.6] - 2026-07-22
