@@ -36,21 +36,30 @@ function get_github_repo_info() {
 }
 
 # Create a GitHub release for the given version, using changelog notes.
+#
+# The notes are piped to gh on stdin (`-F -`) rather than passed as a `-n`
+# argument. A release body is the whole changelog section for the version, which
+# routinely runs to tens of kilobytes, and Windows caps an entire command line at
+# 32,767 characters - so a large section killed the call with "Argument list too
+# long" before gh ever ran. Stdin has no such limit on any platform.
 function github_create_release() {
     local VERSION="$1"
+    local output
 
     if changelog_exists; then
         local RELEASE_NOTES
         RELEASE_NOTES=$(extract_version_updates_from_changelog "$VERSION")
 
-        if ! gh release create "v$VERSION" -n "$RELEASE_NOTES" -t "v$VERSION" >/dev/null; then
+        if ! output=$(printf '%s\n' "$RELEASE_NOTES" | gh release create "v$VERSION" -F - -t "v$VERSION" 2>&1); then
             echo "Error: failed to create GitHub release v$VERSION" >&2
+            printf '   %s\n' "$output" >&2
 
             return 1
         fi
     else
-        if ! gh release create "v$VERSION" -t "v$VERSION" --generate-notes >/dev/null; then
+        if ! output=$(gh release create "v$VERSION" -t "v$VERSION" --generate-notes 2>&1); then
             echo "Error: failed to create GitHub release v$VERSION" >&2
+            printf '   %s\n' "$output" >&2
 
             return 1
         fi
@@ -89,8 +98,13 @@ function github_release_add_compare_link() {
 
     local updated_notes="${existing_notes}"$'\n\n'"${compare_line}"
 
-    if ! gh release edit "$current_tag" --notes "$updated_notes" >/dev/null; then
+    # Piped on stdin for the same reason as github_create_release: the body being
+    # rewritten here is the one that was just published, so passing it back as a
+    # `--notes` argument hits the same command-line length ceiling.
+    local output
+    if ! output=$(printf '%s\n' "$updated_notes" | gh release edit "$current_tag" -F - 2>&1); then
         echo "Warning: failed to add compare link to release $current_tag" >&2
+        printf '   %s\n' "$output" >&2
 
         return 1
     fi
