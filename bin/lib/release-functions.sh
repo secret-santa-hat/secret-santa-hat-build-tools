@@ -238,7 +238,26 @@ function ssh_create_release() {
     echo "    - GitHub release created."
 
     # --- Merge into the default branch -------------------------------------
-    git checkout "$DEFAULT_BRANCH" >/dev/null 2>&1
+    # Report what git said rather than discarding it. Everything above is
+    # already published - the release branch, the tag and the GitHub release -
+    # so a checkout that fails here for a reason that has nothing to do with the
+    # release (an index lock an editor is holding, a file a running dev server
+    # has open) strands it half-finished and leaves the shell sitting on the
+    # release branch, which is where the next commit then lands by mistake.
+    local checkout_output
+    if ! checkout_output=$(git checkout "$DEFAULT_BRANCH" 2>&1); then
+        echo "" >&2
+        echo "❌ Error: could not switch to '$DEFAULT_BRANCH'." >&2
+        printf '   %s\n' "$checkout_output" >&2
+        echo "   release/$CURRENT_VERSION, tag v$CURRENT_VERSION, and the GitHub release were created," >&2
+        echo "   but the merge into '$DEFAULT_BRANCH' was not, and you are still on release/$CURRENT_VERSION." >&2
+        echo "   Do not commit here. Once the problem is cleared, finish the release with:" >&2
+        echo "     git checkout $DEFAULT_BRANCH" >&2
+        echo "     git merge release/$CURRENT_VERSION --no-ff -m \"Merge release/$CURRENT_VERSION into $DEFAULT_BRANCH\"" >&2
+        echo "     git push origin $DEFAULT_BRANCH" >&2
+
+        _release_abort
+    fi
 
     # Sync the default branch with its remote before merging the release into
     # it. Commits can land on the default branch directly on the remote - most
@@ -292,7 +311,17 @@ function ssh_create_release() {
     # no [NEXT_VERSION] template to reset here.
     changelog_add_next_version_template --quiet
 
-    git checkout "$CURRENT_BRANCH" >/dev/null 2>&1
+    # The release itself is complete by this point, so a failure to return is a
+    # warning rather than an abort - but it must still be said, because it is the
+    # difference between ending on the working branch and ending on
+    # "$DEFAULT_BRANCH" holding an uncommitted changelog template.
+    local return_output
+    if ! return_output=$(git checkout "$CURRENT_BRANCH" 2>&1); then
+        echo "" >&2
+        echo "⚠️  Warning: v$CURRENT_VERSION was released, but returning to '$CURRENT_BRANCH' failed." >&2
+        printf '   %s\n' "$return_output" >&2
+        echo "   You are on '$DEFAULT_BRANCH' carrying the re-seeded changelog. Run: git checkout $CURRENT_BRANCH" >&2
+    fi
 
     echo ""
     echo "  ✅ Release v$CURRENT_VERSION created."
