@@ -9,6 +9,13 @@
 
 set -e
 
+# Inherit the ERR trap below into shell functions. Bash runs an ERR trap only in
+# the shell that installed it unless errtrace is on, and the whole release runs
+# inside ssh_create_release() - so every failure in there exited 1 with no
+# message whatsoever, which is how a release can stop halfway and look like it
+# finished.
+set -E
+
 trap 'printf "\n❌ Release failed unexpectedly on line %s (exit code: %s).\n" "$LINENO" "$?" >&2' ERR
 
 export LANG="${LANG:-en_US.UTF-8}"
