@@ -1,6 +1,6 @@
 # Changelog
 
-## [NEXT_VERSION] - [UNRELEASED]
+## [0.2.8] - 2026-08-08
 * BUG: Release - A release that fails partway now says so. The whole run happens inside `ssh_create_release`, and bash executes an `ERR` trap only in the shell that installed it unless `errtrace` is set, which it was not - so every failure inside that function exited `1` having printed nothing at all. The last thing on screen was whichever step had just succeeded, which reads exactly like a release that finished. `set -E` puts the trap back in reach of the function.
 * BUG: Release - Switching to the default branch for the merge reports what git said instead of discarding it. The step is the first one after the release branch, the tag and the GitHub release are all published, so it fails for reasons that have nothing to do with the release - an index lock an editor is holding, a file a running dev server has open - and when it does the release is stranded half-finished with the shell still sitting on the release branch. That is where the next commit then lands by mistake. The failure now names itself and prints the three commands that finish the release.
 * BUG: Release - Returning to the working branch at the end warns when it fails rather than passing silently. The release is complete by then, but the alternative is being left on the default branch holding an uncommitted changelog template with nothing said about it.
