@@ -1,0 +1,14 @@
+# zizmor ( https://docs.zizmor.sh ) audits the GitHub Actions workflows in this
+# repository. Run it locally with:  uvx zizmor .github/workflows
+#
+# Everything zizmor reports is meant to be fixed rather than listed here. The one
+# suppression below is deliberate and carries its reason.
+
+rules:
+  # This workflow runs only from `release: published` or `workflow_dispatch`, both
+  # of which already require write access to the repository. Anybody able to poison
+  # the setup-node cache could already push the code being built, so the cache opens
+  # no path the trigger does not already grant.
+  cache-poisoning:
+    ignore:
+      - publish-npm.yml

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9] - 2026-11-18
+* BUG: Release - A file the release adds that survives the switch to the default branch as an untracked copy no longer stops the merge. On Windows, `git checkout` only warns when another process holds the file open, so the copy stays behind and git refuses to merge over it. An untracked copy identical to the release version is now removed before the merge; one that differs is left for git to report.
+* BUG: Release - A merge that git refuses without starting is no longer reported as conflicts with Dependabot bumps. The error now prints what git said and, when no merge was started, the two commands that finish the release.
+* TSK: Workflows - Every action is pinned to a commit hash with its version recorded alongside, so a moved tag cannot change what publishes the package.
+* TSK: Workflows - A zizmor config, so the workflow can be audited with `uvx zizmor .github/workflows`. Its one suppression is cache poisoning on the publish workflow, which runs only from a published release.
+* TSK: Dependencies - A Dependabot config for GitHub Actions. The package has no runtime dependencies, so the pinned actions are the only thing here with a version to keep current.
+
 ## [0.2.8] - 2026-08-08
 * BUG: Release - A release that fails partway now says so. The whole run happens inside `ssh_create_release`, and bash executes an `ERR` trap only in the shell that installed it unless `errtrace` is set, which it was not - so every failure inside that function exited `1` having printed nothing at all. The last thing on screen was whichever step had just succeeded, which reads exactly like a release that finished. `set -E` puts the trap back in reach of the function.
 * BUG: Release - Switching to the default branch for the merge reports what git said instead of discarding it. The step is the first one after the release branch, the tag and the GitHub release are all published, so it fails for reasons that have nothing to do with the release - an index lock an editor is holding, a file a running dev server has open - and when it does the release is stranded half-finished with the shell still sitting on the release branch. That is where the next commit then lands by mistake. The failure now names itself and prints the three commands that finish the release.
