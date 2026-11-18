@@ -12,7 +12,7 @@ function get_current_branch() {
     git branch --show-current
 }
 
-# Determine the default branch to merge releases into. Honours an override from
+# Determine the default branch to merge releases into. Honors an override from
 # release.conf (SSH_RELEASE_MAIN_BRANCH), otherwise prefers main, then master.
 function get_default_branch() {
     if [ -n "${SSH_RELEASE_MAIN_BRANCH:-}" ]; then

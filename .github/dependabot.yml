@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # The package itself has no runtime dependencies, so the actions in
+  # .github/workflows are the only thing here with a version to keep current. They
+  # are pinned to commit hashes; Dependabot reads the `# v6.1.0` comment beside each
+  # pin and rewrites the hash and the comment together.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "development"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+    groups:
+      actions:
+        patterns:
+          - "*"

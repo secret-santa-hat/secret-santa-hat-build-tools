@@ -8,7 +8,7 @@
 # branch, publishes a GitHub release, merges into the default branch, and
 # leaves the working branch ready for the next cycle.
 #
-# Honours DRY_RUN (set by the --dry-run flag): when true, it performs every
+# Honors DRY_RUN (set by the --dry-run flag): when true, it performs every
 # read-only check and computes the target version but makes no changes.
 
 # Clean, intentional abort. Clears the ERR trap first so a controlled failure
@@ -17,6 +17,34 @@ function _release_abort() {
     trap - ERR 2>/dev/null || true
 
     exit 1
+}
+
+# Remove untracked files that the release branch adds with identical content.
+# On Windows, `git checkout` only warns when it cannot delete a file another
+# process holds open (an editor, a dev server watching `public/`), so a file
+# the release adds can survive the switch to the default branch as an
+# untracked copy and block the merge. A byte-identical copy loses nothing when
+# removed; a copy that differs is left in place for git to report.
+#
+# @since  [NEXT_VERSION]
+function _release_clear_identical_untracked() {
+    local release_ref="$1"
+    local path
+
+    while IFS= read -r path; do
+        if [ -z "$path" ] || [ ! -f "$path" ]; then
+            continue
+        fi
+
+        if git ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
+            continue
+        fi
+
+        if [ "$( git hash-object -- "$path" )" = "$( git rev-parse "$release_ref:$path" 2>/dev/null )" ]; then
+            rm -f -- "$path"
+            echo "    - Removed leftover untracked copy of $path (identical to the release)."
+        fi
+    done < <( git diff --name-only --diff-filter=A HEAD "$release_ref" )
 }
 
 # Run the project's `preflight` script (tests/lint/build) with its output
@@ -283,11 +311,25 @@ function ssh_create_release() {
         fi
     fi
 
-    if ! git merge "release/$CURRENT_VERSION" --no-ff -m "Merge release/$CURRENT_VERSION into $DEFAULT_BRANCH" >/dev/null 2>&1; then
+    _release_clear_identical_untracked "release/$CURRENT_VERSION"
+
+    local merge_output
+    if ! merge_output=$(git merge "release/$CURRENT_VERSION" --no-ff -m "Merge release/$CURRENT_VERSION into $DEFAULT_BRANCH" 2>&1); then
         echo "" >&2
-        echo "❌ Error: merging 'release/$CURRENT_VERSION' into '$DEFAULT_BRANCH' hit conflicts." >&2
-        echo "   Commits pulled from the remote (for example Dependabot bumps) touch the same files" >&2
-        echo "   as this release. Resolve the conflicts, complete the merge, and push '$DEFAULT_BRANCH'." >&2
+
+        if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+            echo "❌ Error: merging 'release/$CURRENT_VERSION' into '$DEFAULT_BRANCH' hit conflicts." >&2
+            printf '   %s\n' "$merge_output" >&2
+            echo "   Commits pulled from the remote (for example Dependabot bumps) touch the same files" >&2
+            echo "   as this release. Resolve the conflicts, complete the merge, and push '$DEFAULT_BRANCH'." >&2
+        else
+            echo "❌ Error: git refused to merge 'release/$CURRENT_VERSION' into '$DEFAULT_BRANCH'." >&2
+            printf '   %s\n' "$merge_output" >&2
+            echo "   No merge was started and nothing conflicted. Clear the problem git names above," >&2
+            echo "   then finish the release with:" >&2
+            echo "     git merge release/$CURRENT_VERSION --no-ff -m \"Merge release/$CURRENT_VERSION into $DEFAULT_BRANCH\"" >&2
+            echo "     git push origin $DEFAULT_BRANCH" >&2
+        fi
 
         _release_abort
     fi
