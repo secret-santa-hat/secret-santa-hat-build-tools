@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.2.10] - 2026-11-23
+* TSK: Dependencies - Weekly action bumps ( Dependabot #1 ): `actions/checkout` 7.0.1, `actions/setup-node` 7.1.0. Workflow pins only.
+
 ## [0.2.9] - 2026-11-18
 * BUG: Release - A file the release adds that survives the switch to the default branch as an untracked copy no longer stops the merge. On Windows, `git checkout` only warns when another process holds the file open, so the copy stays behind and git refuses to merge over it. An untracked copy identical to the release version is now removed before the merge; one that differs is left for git to report.
 * BUG: Release - A merge that git refuses without starting is no longer reported as conflicts with Dependabot bumps. The error now prints what git said and, when no merge was started, the two commands that finish the release.
