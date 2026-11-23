@@ -1,6 +1,6 @@
 # Changelog
 
-## [NEXT_VERSION] - [UNRELEASED]
+## [0.2.10] - 2026-11-23
 * TSK: Dependencies - Weekly action bumps ( Dependabot #1 ): `actions/checkout` 7.0.1, `actions/setup-node` 7.1.0. Workflow pins only.
 
 ## [0.2.9] - 2026-11-18
