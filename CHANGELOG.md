@@ -1,6 +1,6 @@
 # Changelog
 
-## [NEXT_VERSION] - [UNRELEASED]
+## [0.2.11] - 2026-11-25
 * ENH: Release - GitHub calls that fail with a server error, a rate limit or a dropped connection are repeated, up to four times over 37 seconds. `SSH_RELEASE_GITHUB_RETRY_DELAYS` changes the waits.
 * ENH: Release - When the GitHub release cannot be created or confirmed, the error lists what was pushed and the commands that finish the release.
 * BUG: Release - A GitHub error while the release is created no longer stops a release that GitHub did create. The tag is looked up, and the release is created again only when GitHub confirms it does not exist.
