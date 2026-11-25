@@ -254,7 +254,25 @@ function ssh_create_release() {
 
     # --- GitHub release ----------------------------------------------------
     if ! github_create_release "$CURRENT_VERSION"; then
-        echo "❌ Error: GitHub release creation failed. Aborting." >&2
+        local notes_file
+        notes_file=$( mktemp )
+        extract_version_updates_from_changelog "$CURRENT_VERSION" > "$notes_file" 2>/dev/null || true
+
+        echo "" >&2
+        echo "❌ Error: GitHub release v$CURRENT_VERSION could not be created or confirmed." >&2
+        echo "   release/$CURRENT_VERSION and tag v$CURRENT_VERSION were pushed, but the merge into" >&2
+        echo "   '$DEFAULT_BRANCH' was not done, and the current branch is release/$CURRENT_VERSION." >&2
+        echo "   Do not commit here. Check whether GitHub has the release:" >&2
+        echo "     gh release view v$CURRENT_VERSION" >&2
+        echo "   Only if it says \"release not found\", create it:" >&2
+        echo "     gh release create v$CURRENT_VERSION -t v$CURRENT_VERSION -F $notes_file" >&2
+        echo "   Then finish the release with:" >&2
+        echo "     git checkout $DEFAULT_BRANCH" >&2
+        echo "     git pull --ff-only" >&2
+        echo "     git merge release/$CURRENT_VERSION --no-ff -m \"Merge release/$CURRENT_VERSION into $DEFAULT_BRANCH\"" >&2
+        echo "     git push origin $DEFAULT_BRANCH" >&2
+        echo "     git checkout $CURRENT_BRANCH" >&2
+        echo "   and re-seed the changelog." >&2
 
         _release_abort
     fi

@@ -6,3 +6,7 @@
 # Branch that releases are merged into. Auto-detected (main, then master) when
 # unset.
 # SSH_RELEASE_MAIN_BRANCH="main"
+
+# Seconds to wait before each repeat of a GitHub call that failed with a server
+# error, a rate limit or a dropped connection.
+# SSH_RELEASE_GITHUB_RETRY_DELAYS="2 5 10 20"
